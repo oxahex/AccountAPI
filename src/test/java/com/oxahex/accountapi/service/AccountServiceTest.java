@@ -16,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -251,5 +253,50 @@ class AccountServiceTest {
 
         // then: Exception ACCOUNT_ALREADY_UNREGISTERED
         assertEquals(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED, exception.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("계좌 조회 - 성공")
+    void getAccountsByUserId() {
+        // given: 유저가 존재함
+        AccountUser user = AccountUser.builder().id(1L).name("user").build();
+        given(accountUserRepository.findById(anyLong()))
+                .willReturn(Optional.of(user));
+
+        // given: 계좌가 3개 존재함
+        List<Account> accounts = Arrays.asList(
+                Account.builder().accountUser(user).accountNumber("1234567890").balance(10000L).build(),
+                Account.builder().accountUser(user).accountNumber("1234567891").balance(20000L).build(),
+                Account.builder().accountUser(user).accountNumber("1234567892").balance(30000L).build()
+        );
+        given(accountRepository.findByAccountUser(any()))
+                .willReturn(accounts);
+
+        // when
+        List<AccountDto> accountDtos = accountService.getAccountsByUserId(1L);
+
+        // then: 개수, 계좌 정보
+        assertEquals(3, accountDtos.size());
+        assertEquals("1234567890", accountDtos.get(0).getAccountNumber());
+        assertEquals(10000, accountDtos.get(0).getBalance());
+        assertEquals("1234567891", accountDtos.get(1).getAccountNumber());
+        assertEquals(20000, accountDtos.get(1).getBalance());
+        assertEquals("1234567892", accountDtos.get(2).getAccountNumber());
+        assertEquals(30000, accountDtos.get(2).getBalance());
+    }
+
+    @Test
+    @DisplayName("계좌 조회 실패 - 유저 없음")
+    void getAccountsByUserId_UserNotFound() {
+        // given: 유저 없음
+        given(accountUserRepository.findById(anyLong()))
+                .willReturn(Optional.empty());
+
+        // when: 유저가 없는데 계좌 조회 시도
+        AccountException exception = assertThrows(AccountException.class,
+                () -> accountService.getAccountsByUserId(1L));
+
+        // then: Exception USER_NOT_FOUND
+        assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
     }
 }
