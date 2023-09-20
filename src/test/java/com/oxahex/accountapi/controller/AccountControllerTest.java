@@ -34,8 +34,8 @@ class AccountControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("계좌 생성 성공")
-    void successCreateAccount() throws Exception {
+    @DisplayName("계좌 생성 - 성공")
+    void createAccount() throws Exception {
         // given: 계좌 생성 완료
         given(accountService.createAccount(anyLong(), anyLong()))
                 .willReturn(AccountDto.builder()
