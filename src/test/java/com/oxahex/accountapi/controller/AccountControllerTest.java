@@ -14,12 +14,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,4 +87,27 @@ class AccountControllerTest {
                 .andDo(print());
     }
 
+    @Test
+    @DisplayName("계좌 조회 - 성공")
+    void getAccountsByUserId() throws Exception {
+        // given: 계좌 3개 존재
+        List<AccountDto> accountDtos = Arrays.asList(
+                AccountDto.builder().accountNumber("1234567890").balance(10000L).build(),
+                AccountDto.builder().accountNumber("1234567891").balance(20000L).build(),
+                AccountDto.builder().accountNumber("1234567892").balance(30000L).build()
+        );
+        given(accountService.getAccountsByUserId(anyLong()))
+                .willReturn(accountDtos);
+
+        // when
+        // then
+        mockMvc.perform(get("/account?user_id=1"))
+                .andDo(print())
+                .andExpect(jsonPath("$[0].accountNumber").value("1234567890"))
+                .andExpect(jsonPath("$[1].accountNumber").value("1234567891"))
+                .andExpect(jsonPath("$[2].accountNumber").value("1234567892"))
+                .andExpect(jsonPath("$[0].balance").value(10000L))
+                .andExpect(jsonPath("$[1].balance").value(20000L))
+                .andExpect(jsonPath("$[2].balance").value(30000L));
+    }
 }
