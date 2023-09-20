@@ -1,6 +1,8 @@
 package com.oxahex.accountapi.domain;
 
+import com.oxahex.accountapi.exception.AccountException;
 import com.oxahex.accountapi.type.AccountStatus;
+import com.oxahex.accountapi.type.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -37,4 +39,11 @@ public class Account {
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public void useBalance(Long amount) {
+        if (amount > balance) {
+            throw new AccountException(ErrorCode.AMOUNT_EXCEED_BALANCE);
+        }
+        balance -= amount;
+    }
 }
