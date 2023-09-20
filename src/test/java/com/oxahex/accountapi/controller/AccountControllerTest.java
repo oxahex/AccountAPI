@@ -3,6 +3,7 @@ package com.oxahex.accountapi.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oxahex.accountapi.dto.AccountDto;
 import com.oxahex.accountapi.dto.CreateAccount;
+import com.oxahex.accountapi.dto.DeleteAccount;
 import com.oxahex.accountapi.service.AccountService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,7 +48,7 @@ class AccountControllerTest {
                         .unRegisteredAt(LocalDateTime.now())
                         .build());
         // when
-        // then: userId, accountNumber
+        // then: userId, accountNumber, registeredAt
         mockMvc.perform(post("/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
@@ -55,6 +58,31 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.accountNumber").value("1234567890"))
 // TODO               .andExpect(jsonPath("$.registeredAt").value(LocalDateTime.now()))             시간값은?
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("계좌 삭제 - 성공")
+    void deleteAccount() throws Exception {
+        // given: 계좌 삭제 완료
+        given(accountService.deleteAccount(anyLong(), anyString()))
+                .willReturn(AccountDto.builder()
+                        .userId(1L)
+                        .accountNumber("1234567890")
+                        .registeredAt(LocalDateTime.now())
+                        .unRegisteredAt(LocalDateTime.now())
+                        .build());
+        // when
+        // then: userId, accountNumber, unRegisteredAt
+        mockMvc.perform(delete("/account")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(
+                        new DeleteAccount.Request(333L, "9876543210")
+                )))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1L))
+                .andExpect(jsonPath("$.accountNumber").value("1234567890"))
+// TODO               .andExpect(jsonPath("$.unRegisteredAt").value())
                 .andDo(print());
     }
 
