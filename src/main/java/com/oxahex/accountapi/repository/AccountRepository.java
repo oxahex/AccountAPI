@@ -5,6 +5,7 @@ import com.oxahex.accountapi.domain.AccountUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,4 +15,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Integer countByAccountUser(AccountUser accountUser);    // accountUser가 생성한 총 계좌 수 반환
 
     Optional<Account> findByAccountNumber(String accountNumber);    // 계좌 번호로 특정 계좌 데이터 가져옴
+
+    List<Account> findByAccountUser(AccountUser accountUser);   // 유저와 연결된 계좌를 모두 가져옴
 }

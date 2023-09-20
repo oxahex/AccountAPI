@@ -1,14 +1,15 @@
 package com.oxahex.accountapi.controller;
 
+import com.oxahex.accountapi.dto.AccountInfo;
 import com.oxahex.accountapi.dto.CreateAccount;
 import com.oxahex.accountapi.dto.DeleteAccount;
 import com.oxahex.accountapi.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,5 +40,17 @@ public class AccountController {
                         request.getAccountNumber()
                 )
         );
+    }
+
+    @GetMapping("/account")
+    public List<AccountInfo> getAccountsByUserId(
+            @RequestParam("user_id") Long userId) {
+
+        // List<AccountDto> 타입을 List<AccountInfo> 타입으로 변환해 반환
+        return accountService.getAccountsByUserId(userId)
+                .stream().map(accountDto -> AccountInfo.builder()
+                        .accountNumber(accountDto.getAccountNumber())
+                        .balance(accountDto.getBalance()).build())
+                .collect(Collectors.toList());
     }
 }

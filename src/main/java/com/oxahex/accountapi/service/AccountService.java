@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -114,4 +116,25 @@ public class AccountService {
         }
     }
 
+    /**
+     * 특정 유저의 계좌 목록을 조회합니다.
+     * <p>
+     * 유저가 존재하는 경우, 해당 유저와 연결된 계좌를 가져와 반환합니다.
+     * @param userId
+     * @return 사용자와 연결된 계좌 리스트
+     */
+    @Transactional
+    public List<AccountDto> getAccountsByUserId(Long userId) {
+        // 사용자가 있는지 조회
+        AccountUser accountUser = accountUserRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+
+        // 해당 사용자와 연결된 계좌를 모두 조회
+        List<Account> accounts = accountRepository.findByAccountUser(accountUser);
+
+        // AccountDto 타입으로 변환해 반환
+        return accounts.stream()
+                .map(AccountDto::fromEntity)
+                .collect(Collectors.toList());
+    }
 }
