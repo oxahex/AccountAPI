@@ -12,4 +12,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findFirstByOrderByIdDesc();   // 가장 마지막에 생성된 Account를 가져옴
 
     Integer countByAccountUser(AccountUser accountUser);    // accountUser가 생성한 총 계좌 수 반환
+
+    Optional<Account> findByAccountNumber(String accountNumber);    // 계좌 번호로 특정 계좌 데이터 가져옴
 }

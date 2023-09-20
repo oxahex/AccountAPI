@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -63,4 +64,51 @@ public class AccountService {
             throw new AccountException(ErrorCode.MAX_ACCOUNT_PER_USER_10);
         }
     }
+
+    /**
+     * 계좌를 삭제 합니다.
+     * <p>
+     * 사용자 ID와 계좌의 소유주 ID가 같고, 계좌가 존재하는 경우, 이미 해지된 계좌가 아니고, 계좌에 잔액이 없는 경우 계좌의 상태를 변경(UNREGISTERED), 해지 일시를 업데이트 합니다.
+     * @param userId 유저 아이디
+     * @param accountNumber 해지하려는 계좌의 계좌번호
+     * @return 해지된 계좌의 정보
+     */
+    @Transactional
+    public AccountDto deleteAccount(Long userId, String accountNumber) {
+        // 사용자가 있는지 조회
+        // type은 기본적으로 Optional임
+        AccountUser accountUser = accountUserRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+
+        // Account 조회
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        // Validation
+        validateDeleteAccount(accountUser, account);
+
+        // 계좌 상태 업데이트, 해지 일자 수정
+        account.setAccountStatus(AccountStatus.UNREGISTERED);
+        account.setUnRegisteredAt(LocalDateTime.now());
+
+        return AccountDto.fromEntity(account);
+    }
+
+    private void validateDeleteAccount(AccountUser accountUser, Account account) {
+        // 유저와, 계좌 소유주가 다름
+        if (!Objects.equals(accountUser.getId(), account.getAccountUser().getId())) {
+            throw new AccountException(ErrorCode.USER_ACCOUNT_UN_MATCH);
+        }
+
+        // 이미 해지된 계좌인 경우
+        if (account.getAccountStatus() == AccountStatus.UNREGISTERED) {
+            throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
+        }
+
+        // 계좌에 잔액이 있는 경우
+        if (account.getBalance() > 0) {
+            throw new AccountException(ErrorCode.BALANCE_NOT_EMPTY);
+        }
+    }
+
 }
