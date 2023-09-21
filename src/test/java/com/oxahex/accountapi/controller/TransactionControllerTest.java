@@ -1,6 +1,8 @@
 package com.oxahex.accountapi.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oxahex.accountapi.dto.CancelBalance;
 import com.oxahex.accountapi.dto.TransactionDto;
 import com.oxahex.accountapi.dto.UseBalance;
 import com.oxahex.accountapi.service.TransactionService;
@@ -38,7 +40,7 @@ class TransactionControllerTest {
     @Test
     @DisplayName("잔액 사용 - 성공")
     void useBalance() throws Exception {
-        // given: transaction 성공
+        // given: 잔액 사용 transaction 성공
         given(transactionService.useBalance(anyLong(), anyString(), anyLong()))
                 .willReturn(TransactionDto.builder()
                         .accountNumber("1234567890")
@@ -61,5 +63,33 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.transactionResult").value("S"))
                 .andExpect(jsonPath("$.transactionId").value("transactionId"))
                 .andExpect(jsonPath("$.amount").value(12345));
+    }
+
+    @Test
+    @DisplayName("잔액 취소 - 성공")
+    void cancelBalance() throws Exception {
+        // given: 잔액 취소 transaction 성공
+        given(transactionService.cancelBalance(anyString(), anyString(), anyLong()))
+                .willReturn(TransactionDto.builder()
+                        .accountNumber("1234567890")
+                        .transactedAt(LocalDateTime.now())
+                        .amount(54321L)
+                        .transactionId("transactionId")
+                        .transactionResultType(TransactionResultType.S)
+                        .build());
+
+        // when
+        // then
+        mockMvc.perform(post("/transaction/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new CancelBalance.Request("transactionId", "1234567890", 10000L)
+                        )))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountNumber").value("1234567890"))
+                .andExpect(jsonPath("$.transactionResult").value("S"))
+                .andExpect(jsonPath("$.transactionId").value("transactionId"))
+                .andExpect(jsonPath("$.amount").value(54321));
     }
 }
