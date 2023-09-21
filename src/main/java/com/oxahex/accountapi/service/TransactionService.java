@@ -160,4 +160,18 @@ public class TransactionService {
                         .build()
         );
     }
+
+    /**
+     * 특정 거래 내역 조회
+     * <p>
+     * 거래 ID 존재 여부 확인 후 거래 내역 정보 반환
+     * @param transactionId 조회하고자 하는 거래 ID
+     * @return 거래 내역 정보
+     */
+    @Transactional
+    public TransactionDto queryTransaction(String transactionId) {
+        // transaction id 로 거래가 있는지 확인 후 반환
+        return TransactionDto.fromEntity(transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND)));
+    }
 }
