@@ -442,4 +442,55 @@ class TransactionServiceTest {
         // then: Exception TOO_OLD_ORDER_TO_CANCEL
         assertEquals(TOO_OLD_ORDER_TO_CANCEL, exception.getErrorCode());
     }
+
+    @Test
+    @DisplayName("거래 조회 - 성공")
+    void queryTransaction() {
+        // given
+        AccountUser user = AccountUser.builder().build();
+        Account account = Account.builder()
+                .id(1L)
+                .accountUser(user)
+                .accountStatus(IN_USE)
+                .balance(ACCOUNT_BALANCE)
+                .accountNumber("1234567890").build();
+
+        Transaction transaction = Transaction.builder()
+                .account(account)
+                .transactionType(CANCEL)
+                .transactionResultType(S)
+                .transactionId("transactionId")
+                .transactedAt(LocalDateTime.now())
+                .amount(CANCEL_AMOUNT)
+                .balanceSnapShot(ACCOUNT_BALANCE)
+                .build();
+
+        given(transactionRepository.findByTransactionId(anyString()))
+                .willReturn(Optional.of(transaction));
+
+        // when
+        TransactionDto transactionDto = transactionService.queryTransaction("transactionId");
+
+        // then
+        assertEquals(CANCEL, transactionDto.getTransactionType());
+        assertEquals(S, transactionDto.getTransactionResultType());
+        assertEquals(CANCEL_AMOUNT, transactionDto.getAmount());
+        assertEquals("transactionId", transactionDto.getTransactionId());
+    }
+
+    @Test
+    @DisplayName("거래 조회 실패 - 해당 거래 없음")
+    void queryTransaction_TransactionNotFound() {
+        // given: 거래가 없음
+        given(transactionRepository.findByTransactionId(anyString()))
+                .willReturn(Optional.empty());
+
+        // when: 기존 거래가 없는데 잔액 사용 취소 시도
+        AccountException exception = assertThrows(AccountException.class,
+                () -> transactionService.queryTransaction("transactionId"));
+
+        // then: Exception TRANSACTION_NOT_FOUND
+        assertEquals(TRANSACTION_NOT_FOUND, exception.getErrorCode());
+    }
+
 }
