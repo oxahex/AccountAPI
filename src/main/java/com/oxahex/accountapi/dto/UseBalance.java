@@ -1,5 +1,6 @@
 package com.oxahex.accountapi.dto;
 
+import com.oxahex.accountapi.aop.AccountLockIdInterface;
 import com.oxahex.accountapi.type.TransactionResultType;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -11,7 +12,7 @@ public class UseBalance {
     @Getter
     @Setter
     @AllArgsConstructor
-    public static class Request {
+    public static class Request implements AccountLockIdInterface {
         @NotNull
         @Min(1)
         private Long userId;

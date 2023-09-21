@@ -1,5 +1,6 @@
 package com.oxahex.accountapi.controller;
 
+import com.oxahex.accountapi.aop.AccountLock;
 import com.oxahex.accountapi.dto.CancelBalance;
 import com.oxahex.accountapi.dto.QueryTransactionResponse;
 import com.oxahex.accountapi.dto.UseBalance;
@@ -17,10 +18,12 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("/transaction/use")
+    @AccountLock
     public UseBalance.Response useBalance(
-            @Valid @RequestBody UseBalance.Request request) {
+            @Valid @RequestBody UseBalance.Request request) throws InterruptedException {
 
         try {
+            Thread.sleep(5000L);
             return UseBalance.Response.from(
                     transactionService.useBalance(
                             request.getUserId(),
@@ -42,6 +45,7 @@ public class TransactionController {
     }
 
     @PostMapping("/transaction/cancel")
+    @AccountLock
     public CancelBalance.Response cancelBalance(
             @Valid @RequestBody CancelBalance.Request request) {
 
