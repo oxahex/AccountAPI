@@ -24,9 +24,8 @@ public class AccountService {
     private final AccountUserRepository accountUserRepository;
 
     /**
-     * 계좌를 생성합니다.
-     * <p>
-     * 요청이 들어온 사용자가 실제로 DB에 존재하는지 확인하고, 계좌 번호를 생성하고, 계좌를 DB에 저장합니다.
+     * 계좌 생성
+     * <p> 요청이 들어온 사용자가 실제로 DB에 존재하는지 확인하고, 계좌 번호를 생성하고, 계좌를 DB에 저장.
      * @param userId 유저 아이디
      * @param initialBalance 계좌 생성 시 기본 잔액
      * @return AccountDto(생성한 계좌의 정보)를 반환
@@ -35,8 +34,7 @@ public class AccountService {
     public AccountDto createAccount(Long userId, Long initialBalance) {
         // 사용자가 있는지 조회
         // type은 기본적으로 Optional임
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+        AccountUser accountUser = getAccountUser(userId);
 
         // Validation
         validateCreateAccount(accountUser);
@@ -68,19 +66,16 @@ public class AccountService {
     }
 
     /**
-     * 계좌를 삭제 합니다.
-     * <p>
-     * 사용자 ID와 계좌의 소유주 ID가 같고, 계좌가 존재하는 경우, 이미 해지된 계좌가 아니고, 계좌에 잔액이 없는 경우 계좌의 상태를 변경(UNREGISTERED), 해지 일시를 업데이트 합니다.
+     * 계좌 삭제
+     * <p> 사용자 ID와 계좌의 소유주 ID가 같고, 계좌가 존재하는 경우, 이미 해지된 계좌가 아니고, 계좌에 잔액이 없는 경우 계좌 상태 변경(UNREGISTERED), 해지 일시 업데이트.
      * @param userId 유저 아이디
      * @param accountNumber 해지하려는 계좌의 계좌번호
      * @return 해지된 계좌의 정보
      */
     @Transactional
     public AccountDto deleteAccount(Long userId, String accountNumber) {
-        // 사용자가 있는지 조회
-        // type은 기본적으로 Optional임
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+        // 유저가 있는지 조회
+        AccountUser accountUser = getAccountUser(userId);
 
         // Account 조회
         Account account = accountRepository.findByAccountNumber(accountNumber)
@@ -117,17 +112,15 @@ public class AccountService {
     }
 
     /**
-     * 특정 유저의 계좌 목록을 조회합니다.
-     * <p>
-     * 유저가 존재하는 경우, 해당 유저와 연결된 계좌를 가져와 반환합니다.
-     * @param userId
+     * 특정 유저의 계좌 목록 조회.
+     * <p> 유저가 존재하는 경우, 해당 유저와 연결된 계좌를 가져와 반환.
+     * @param userId 해당 유저의 아이디
      * @return 사용자와 연결된 계좌 리스트
      */
     @Transactional
     public List<AccountDto> getAccountsByUserId(Long userId) {
         // 사용자가 있는지 조회
-        AccountUser accountUser = accountUserRepository.findById(userId)
-                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
+        AccountUser accountUser = getAccountUser(userId);
 
         // 해당 사용자와 연결된 계좌를 모두 조회
         List<Account> accounts = accountRepository.findByAccountUser(accountUser);
@@ -136,5 +129,10 @@ public class AccountService {
         return accounts.stream()
                 .map(AccountDto::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    private AccountUser getAccountUser(Long userId) {
+        return accountUserRepository.findById(userId)
+                .orElseThrow(() -> new AccountException(ErrorCode.USER_NOT_FOUND));
     }
 }
