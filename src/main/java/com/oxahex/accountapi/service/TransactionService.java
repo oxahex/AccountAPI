@@ -30,7 +30,7 @@ public class TransactionService {
     private final AccountRepository accountRepository;
 
     /**
-     * 거래 정보 저장 및 사용자 계좌의 잔액을 업데이트 합니다.
+     * 거래 정보 저장 및 사용자 계좌의 잔액 업데이트
      * @param userId 유저 아이디
      * @param accountNumber 거래하려는 계좌의 계좌번호
      * @param amount 거래 금액
@@ -86,6 +86,14 @@ public class TransactionService {
     }
 
 
+    /**
+     * 거래 취소
+     * <P> 거래 취소 유효성 판단 후, 기존 금액으로 롤백
+     * @param transactionId 취소하려는 거래의 ID
+     * @param accountNumber 거래가 일어난 계좌 번호
+     * @param amount 취소 금액
+     * @return 거래 취소 정보 데이터
+     */
     @Transactional
     public TransactionDto cancelBalance(
             String transactionId, String accountNumber, Long amount) {
@@ -163,8 +171,7 @@ public class TransactionService {
 
     /**
      * 특정 거래 내역 조회
-     * <p>
-     * 거래 ID 존재 여부 확인 후 거래 내역 정보 반환
+     * <p> 거래 ID 존재 여부 확인 후 거래 내역 정보 반환
      * @param transactionId 조회하고자 하는 거래 ID
      * @return 거래 내역 정보
      */
