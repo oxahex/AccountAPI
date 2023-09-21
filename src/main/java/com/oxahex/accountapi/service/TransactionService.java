@@ -54,7 +54,7 @@ public class TransactionService {
 
         // 변경 사항(잔액 변경) DB 업데이트 후 DTO로 변환해 반환
         return TransactionDto.fromEntity(
-                saveAndGetTransaction(TransactionResultType.S, account, amount)
+                saveAndGetTransaction(TransactionType.USE, TransactionResultType.S, account, amount)
         );
     }
 
@@ -82,16 +82,75 @@ public class TransactionService {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        saveAndGetTransaction(TransactionResultType.F, account, amount);
+        saveAndGetTransaction(TransactionType.USE, TransactionResultType.F, account, amount);
     }
 
-    private Transaction saveAndGetTransaction(
-            TransactionResultType transactionResultType,
-            Account account, Long amount) {
 
+    @Transactional
+    public TransactionDto cancelBalance(
+            String transactionId, String accountNumber, Long amount) {
+
+        Transaction transaction = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        // Validation
+        validateCancelBalance(transaction, account, amount);
+
+        // 계좌 잔액 + 취소 금액
+        account.cancelBalance(amount);
+
+        // 변경 사항(잔액 변경) DB 업데이트 후 DTO로 변환해 반환
+        return TransactionDto.fromEntity(
+                saveAndGetTransaction(TransactionType.CANCEL, TransactionResultType.S, account, amount)
+        );
+    }
+
+
+    @Transactional
+    public void saveFailedCancelTransaction(
+            String accountNumber, Long amount
+    ) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        saveAndGetTransaction(TransactionType.CANCEL, TransactionResultType.F, account, amount);
+    }
+
+    private void validateCancelBalance(Transaction transaction, Account account, Long amount) {
+        // 거래와 계좌가 일치하지 않는 경우
+        if (!Objects.equals(transaction.getAccount().getId(), account.getId())) {
+            throw new AccountException(ErrorCode.TRANSACTION_ACCOUNT_UN_MATCH);
+        }
+
+        // 거래 금액과 거래 취소 금액이 다른 경우(부분 취소 불가 정책)
+        if (!Objects.equals(transaction.getAmount(), amount)) {
+            throw new AccountException(ErrorCode.CANCEL_MUST_FULLY);
+        }
+
+        // 1년이 넘은 거래를 취소 시도하는 경우
+        if (transaction.getTransactedAt().isBefore(LocalDateTime.now().minusYears(1))) {
+            throw new AccountException(ErrorCode.TOO_OLD_ORDER_TO_CANCEL);
+        }
+
+        // 계좌가 이미 해지 상태인 경우
+        if (account.getAccountStatus() == AccountStatus.UNREGISTERED) {
+            throw new AccountException(ErrorCode.ACCOUNT_ALREADY_UNREGISTERED);
+        }
+    }
+
+    @Transactional
+    public Transaction saveAndGetTransaction(
+            TransactionType transactionType,
+            TransactionResultType transactionResultType,
+            Account account,
+            Long amount)
+    {
         return transactionRepository.save(
                 Transaction.builder()
-                        .transactionType(TransactionType.USE)
+                        .transactionType(transactionType)
                         .transactionResultType(transactionResultType)
                         .account(account)
                         .amount(amount)
